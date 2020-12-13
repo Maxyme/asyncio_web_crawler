@@ -1,7 +1,7 @@
 """Debug tools"""
 import asyncio
 
-from main import get_images_from_url_recursive
+from logic import get_images_from_url_recursive
 
 
 async def main():

@@ -13,6 +13,8 @@ beautifulsoup4 = "^4.9.3"
 asyncio-pool = "^0.5.2"
 invoke = "^1.4.1"
 structlog = "^20.1.0"
+databases = {extras = ["sqlite"], version = "^0.4.1"}
+async_lru = "^1.0.2"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.790"

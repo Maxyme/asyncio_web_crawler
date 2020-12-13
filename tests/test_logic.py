@@ -2,12 +2,12 @@
 from bs4 import BeautifulSoup
 from pytest import mark
 
-from main import (
-    find_all_images,
+from logic import (
     find_all_urls,
+    find_all_images,
+    find_all_images_regex,
     get_html,
     get_images_from_url_recursive,
-    find_all_images_regex,
 )
 
 html = """
