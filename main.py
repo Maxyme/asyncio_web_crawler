@@ -14,7 +14,7 @@ from fastapi.encoders import jsonable_encoder
 from httpx import AsyncClient, Timeout
 from starlette.requests import Request
 from structlog import configure
-from structlog.threadlocal import merge_threadlocal_context
+from structlog.threadlocal import merge_threadlocal_context, clear_threadlocal
 
 from models import Result, Status, Job, InputJob, ReturnJob
 import logging
@@ -66,6 +66,7 @@ async def job_result(job_id: UUID):
 @app.get("/status/{job_id}", response_model=Status)
 async def job_status(job_id: UUID):
     """Return the job status"""
+    logger.info(task_job_dict.keys())
     try:
         job = task_job_dict[job_id]
     except KeyError:
@@ -80,6 +81,10 @@ async def get_html(url: str) -> str:
     return response.text
 
 
+def get_subdomain(url: str):
+    return "/".join(url.split("/")[:-1]) + "/"
+
+
 async def get_images_from_url_recursive(
     url: str, current_depth: int = 0, max_depth: int = 1
 ) -> List[str]:
@@ -88,9 +93,10 @@ async def get_images_from_url_recursive(
     content = await get_html(url)
     soup = BeautifulSoup(content, "html.parser")
     sub_hrefs = find_all_urls(soup)
-    logger.info(f"Sub html references: {sub_hrefs}")
-    image_urls = find_all_images(soup)
-    logger.info(f"{len(image_urls)} sub images: {image_urls}")
+    image_urls = find_all_images(soup, get_subdomain(url))
+    logger.debug(
+        f"{len(image_urls)} image(s) found: {image_urls} at depth: {current_depth} for url: {url}"
+    )
 
     sub_images = []
     if len(sub_hrefs) > 0 and current_depth < max_depth:
@@ -102,17 +108,18 @@ async def get_images_from_url_recursive(
     return image_urls + sub_images
 
 
-async def callback(res, err, ctx):
+async def callback(result, error, context):
     """Callback method for get_images_from_url to update job progress"""
-    if err:
-        logger.exception(err)
-        exc, tb = err
+    if error:
+        logger.exception(error)
+        exc, tb = error
         return exc
     # Update job progress
-    job, url = ctx
+    job, url = context
     logger.info(f"job id: {job.id} completed for url: {url}")
     job.in_progress -= 1
     job.completed += 1
+    job.image_urls[url] = result
 
 
 async def crawl_website(
@@ -125,17 +132,12 @@ async def crawl_website(
     start = time.time()
     job = task_job_dict[job_id]
     # create an AioPool with the given number of threads/coroutines
-    all_futures = []
     async with AioPool(size=threads) as pool:
         for url in urls:
-            future = await pool.spawn(
-                get_images_from_url_recursive(url), callback, (job, url)
-            )
-            all_futures.append((url, future))
+            await pool.spawn(get_images_from_url_recursive(url), callback, (job, url))
 
-    for url, future in all_futures:
-        job.image_urls[url] = future.result()
     logger.info(f"Finished job id: {job_id} in {time.time() - start} seconds")
+    clear_threadlocal()
 
 
 def find_all_urls(soup: BeautifulSoup) -> set[str]:
@@ -146,12 +148,15 @@ def find_all_urls(soup: BeautifulSoup) -> set[str]:
     return set(url.removesuffix("/") for url in urls)
 
 
-def find_all_images(soup: BeautifulSoup) -> List[str]:
-    """Find all image tags <img> with the filetype jpg, gif or png in the given soup"""
-    img_tags = soup.find_all("img")
-    return [
-        img["src"] for img in img_tags if re.match(is_image_regex, img.get("src", ""))
-    ]
+def find_all_images(soup: BeautifulSoup, base_url: str = None) -> List[str]:
+    """Find all image tags <img> with the filetype jpg, gif or png in the given soup. Note will exclude base64 images"""
+    images = soup.select('img[src$=".jpg"], img[src$=".gif"], img[src$=".png"]')
+
+    if base_url is not None:
+        # add base url if provided and missing in the images (ie. images are relative to url)
+        images = [f"{base_url}{image}" for image in images if not "//" in image]
+
+    return images
 
 
 def find_all_images_regex(text: str) -> set[str]:

@@ -42,6 +42,7 @@ html = """
   <img src="img_chania.png" title="Flowers in Chania" alt="Flowers in Chania"> 
   <img src="img_chania.gif" title="Flowers in Chania" alt="Flowers in Chania"> 
   <img src="img_chania.webp" title="Flowers in Chania" alt="Flowers in Chania"> 
+  <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
   <p><a href="mailto:someone@example.com">Send email</a></p>
   <p><a>Send email</a></p>
   <weird images from google>
@@ -74,7 +75,7 @@ def test_search_images():
     """Test the search images method"""
     soup = BeautifulSoup(html, "html.parser")
     image_list = find_all_images(soup)
-    assert len(image_list) == 4
+    assert len(image_list) == 3
     for filetype in [".jpg", ".png", ".gif"]:
         assert f"img_chania.{filetype}"
 

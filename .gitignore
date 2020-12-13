@@ -1,4 +1,8 @@
 # IDE
 .idea
+
 # Pytest
 .pytest_cache
+
+# cache
+__pycache__
