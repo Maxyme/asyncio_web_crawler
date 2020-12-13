@@ -11,3 +11,5 @@ RUN poetry install
 COPY . .
 
 EXPOSE 8080
+
+ENTRYPOINT ["inv", "start"]

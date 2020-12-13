@@ -1,6 +1,6 @@
 """Api tests"""
 from time import sleep
-from typing import Generator
+from typing import AsyncGenerator
 
 from httpx import AsyncClient
 from pytest import fixture, mark
@@ -8,7 +8,7 @@ from main import app
 
 
 @fixture
-async def client() -> Generator:
+async def client() -> AsyncGenerator:
     async with AsyncClient(app=app, base_url="http://testserver") as client:
         yield client
 

@@ -109,6 +109,6 @@ def find_all_images(soup: BeautifulSoup, base_url) -> List[str]:
     return fix_relative_urls(image_urls, base_url)
 
 
-def find_all_images_regex(text: str) -> set[str]:
+def find_all_images_regex(text: str) -> List[str]:
     """Find all images in the text, this will retrieve images that don't have a <img> tag as well"""
     return re.findall(is_image_regex, text)
