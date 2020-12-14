@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class InputJob(BaseModel):
     """InputJob model, used as input in the /create_job route"""
 
-    threads: int
+    threads: int = 1
     urls: List[str]
 
 
