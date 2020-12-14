@@ -1,4 +1,5 @@
 """Database queries"""
+from typing import List, Dict
 from uuid import UUID
 
 from databases import Database
@@ -48,6 +49,20 @@ async def update_job(database: Database, job: Job):
     """
 
     values = {"image_urls": json.dumps(job.image_urls), "id": str(job.id)}
+    await database.execute(query=query, values=values)
+
+
+async def update_job_by_id(
+    database: Database, job_id: UUID, image_urls: Dict[str, List[str]]
+):
+    """Update a job. Increment the completed and in progress counters automatically"""
+    query = """
+    UPDATE Jobs
+    SET in_progress = in_progress - 1, completed = completed + 1, image_urls = :image_urls
+    WHERE id = :id; 
+    """
+
+    values = {"image_urls": json.dumps(image_urls), "id": str(job_id)}
     await database.execute(query=query, values=values)
 
 

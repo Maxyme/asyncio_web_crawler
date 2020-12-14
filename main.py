@@ -11,7 +11,7 @@ from structlog import configure
 from structlog.threadlocal import merge_threadlocal_context
 
 from database import create_tables, add_job, retrieve_job, database
-from logic import crawl_website
+from logic import crawl_website_workers
 from models import Result, Status, Job, InputJob, ReturnJob
 import logging
 
@@ -46,7 +46,7 @@ async def create_job(request: Request, input_job: InputJob):
     )
     # create a task to crawl the given urls, note the task will be added to the event loop automatically
     asyncio.create_task(
-        crawl_website(job, input_job.urls, job.threads), name=str(job.id)
+        crawl_website_workers(job, input_job.urls, job.threads), name=str(job.id)
     )
     # save job
     await add_job(database, job)

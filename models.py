@@ -41,3 +41,12 @@ class Result(BaseModel):
     """Result model, used in the /result route"""
 
     image_urls: Dict[str, List[str]]
+
+
+class Task(BaseModel):
+    """Model to store task details"""
+
+    job_id: UUID
+    main_url: str
+    current_url: str
+    get_sub_urls: bool

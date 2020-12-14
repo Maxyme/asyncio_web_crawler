@@ -58,7 +58,7 @@ html = """
 def test_search_urls():
     """Test the search url method"""
     soup = BeautifulSoup(html, "html.parser")
-    urls = find_all_urls(soup)
+    urls = find_all_urls(soup, base_url="")
     assert len(urls) == 3
     assert "http://example.com/tillie" in urls
 
