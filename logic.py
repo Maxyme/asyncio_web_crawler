@@ -8,7 +8,7 @@ import structlog
 from async_lru import alru_cache
 from asyncio_pool import AioPool
 from bs4 import BeautifulSoup
-from httpx import AsyncClient, Timeout, ConnectTimeout
+from httpx import AsyncClient, Timeout, ConnectTimeout, ConnectError
 from structlog.threadlocal import clear_threadlocal
 
 from database import update_job, database, retrieve_job
@@ -103,12 +103,15 @@ async def crawl_website_workers(job: Job, urls: List[str], threads: int = 1):
 
 
 @alru_cache(maxsize=128)
-async def get_url_links(url: str, get_sub_href: bool = True) -> Tuple[List[str], List[str]]:
+async def get_url_links(
+    url: str, get_sub_href: bool = True
+) -> Tuple[List[str], List[str]]:
     """Get all img links (and hrefs if get_sub_href=True)"""
     logger.info(f"Extracting content from url: {url}, get_sub_href {get_sub_href}")
     try:
         content = await get_html(url)
-    except ConnectTimeout:
+    except (ConnectTimeout, ConnectError):
+        # todo: add retry behaviour instead
         return [], []
     soup = BeautifulSoup(content, "html.parser")
     subdomain = get_subdomain(url)
