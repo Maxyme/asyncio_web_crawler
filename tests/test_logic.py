@@ -38,6 +38,8 @@ html = """
    </a>
    ; and they lived at the bottom of a well.
   </p>
+  
+  <p><a href="https://www.ssrg.ece.vt.edu/papers/vee2019.pdf"> PDF </a></p>
   <img src="img_chania.jpg" title="Flowers in Chania" alt="Flowers in Chania"> 
   <img src="img_chania.png" title="Flowers in Chania" alt="Flowers in Chania"> 
   <img src="img_chania.gif" title="Flowers in Chania" alt="Flowers in Chania"> 

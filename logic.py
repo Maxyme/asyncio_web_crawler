@@ -148,7 +148,7 @@ def fix_relative_urls(urls: Iterable[str], base_url) -> List[str]:
 
 def find_all_urls(soup: BeautifulSoup, base_url: str) -> List[str]:
     """Find all href urls in the given soup. Note, will ignore mailto and # references"""
-    urls = soup.select("a[href]:not(a[href^=mailto\:], a[href^=\#])")
+    urls = soup.select("a[href]:not(a[href^=mailto\:], a[href^=\#], a[href$='.pdf'])")
     urls = set([url["href"] for url in urls if url.get("href")])
     return fix_relative_urls(urls, base_url)
 
