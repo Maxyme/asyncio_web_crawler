@@ -1,7 +1,16 @@
 # Asyncio based Web Crawler
 
+## Development Prerequisites
+- install [just](https://github.com/casey/just)
+- install [poetry](https://python-poetry.org/)  
+- install env: `poetry install --dev`
+- start shell: `poetry shell`
+
 ## Running the tests  
 `pytest .`
+
+## Starting the webserver 
+`just num_workers=4 log_level=debug start`
 
 ## Building the docker image  
 `docker build . --tag crawler_test`
@@ -19,3 +28,12 @@
     `http 'http://localhost:8080/status/{job_id}'`  
   - Get the job's results:  
     `http 'http://localhost:8080/result/{job_id}'`  
+
+
+## Todo:
+- rename master to main
+- replace fastapi with sanic
+- add edgedb in docker-compose
+- investigate adding nginx
+- add svelte frontend server-side rendered
+- 
