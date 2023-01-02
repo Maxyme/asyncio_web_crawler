@@ -18,7 +18,7 @@
 ## Running the docker image on selected port 
 `docker run -p 8080:8000 crawler_test`
 
-## Testing the api, after it's running
+## Testing the api, after it's running (via docker)
 - visit localhost:8080/docs to interact with api in the browser
 
 - or use httpie (or curl) commands directly:  
@@ -31,9 +31,12 @@
 
 
 ## Todo:
-- rename master to main
-- replace fastapi with sanic
+- crash server on any worker error
+- Add parameter for recursive depth
+- use scrappy instead of beautiful soup
+- use pytest sanic instead of pytest-async
 - add edgedb in docker-compose
 - investigate adding nginx
 - add svelte frontend server-side rendered
-- 
+- multi-stage docker image (with distroless?)
+- automate db migrations when starting with docker-compose

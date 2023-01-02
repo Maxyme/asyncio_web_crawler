@@ -2,7 +2,7 @@
 from bs4 import BeautifulSoup
 from pytest import mark
 
-from logic import (
+from app.logic import (
     find_all_urls,
     find_all_images,
     find_all_images_regex,

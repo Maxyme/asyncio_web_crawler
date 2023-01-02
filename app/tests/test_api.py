@@ -4,7 +4,7 @@ from typing import AsyncGenerator
 
 from httpx import AsyncClient
 from pytest import fixture, mark
-from main import app
+from app.server import app
 
 
 @fixture

@@ -1,0 +1,1 @@
+select Job {id, created_at};
