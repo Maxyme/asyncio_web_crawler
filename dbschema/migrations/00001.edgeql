@@ -1,4 +1,4 @@
-CREATE MIGRATION m123jkqvyvuxefziwhdw4uttfd32gj5uc5ngwb4tw4go54dklnfqaa
+CREATE MIGRATION m1meeb447vjzdkvstlnpflshlc66it2r4aytmzyavrpkqdhr7tgmxa
     ONTO initial
 {
   CREATE FUTURE nonrecursive_access_policies;
@@ -8,11 +8,11 @@ CREATE MIGRATION m123jkqvyvuxefziwhdw4uttfd32gj5uc5ngwb4tw4go54dklnfqaa
           SET readonly := true;
       };
   };
+  CREATE SCALAR TYPE default::StatusType EXTENDING enum<in_progress, completed, error>;
   CREATE TYPE default::Job EXTENDING default::Auditable {
-      CREATE PROPERTY completed -> std::bool;
-      CREATE PROPERTY image_urls -> std::json;
-      CREATE PROPERTY in_progress -> std::bool;
-      CREATE PROPERTY input_urls -> std::json;
-      CREATE PROPERTY threads -> std::int16;
+      CREATE PROPERTY image_urls -> array<std::str>;
+      CREATE PROPERTY input_urls -> array<std::str>;
+      CREATE REQUIRED PROPERTY status -> default::StatusType;
+      CREATE REQUIRED PROPERTY threads -> std::int16;
   };
 };

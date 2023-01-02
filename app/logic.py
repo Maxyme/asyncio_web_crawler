@@ -1,30 +1,31 @@
 """Logical functions"""
 import asyncio
-import json
 import re
 import time
-from typing import List, Iterable, Dict, Tuple
+from typing import List, Dict, Tuple
+from urllib.parse import urljoin
 
+# todo: import from main
+import generated_async_edgeql as db_queries
 import aiohttp
 import edgedb
 import structlog
 from async_lru import alru_cache
 from bs4 import BeautifulSoup
-from httpx import AsyncClient, Timeout
 
 from models import Task
+
 client = edgedb.create_async_client()
 
-# todo: import from main
-import generated_async_edgeql as db_queries
-
 logger = structlog.get_logger()
+
+HTTP_URL_RE = re.compile("^https?://")
 
 
 async def crawler_worker(
     task_queue, images_for_url: Dict[str, List[str]], sub_urls_counter: Dict[str, int]
 ):
-    """Crawler worker instance. Fetches tasks from the queue and runs them"""
+    """Crawler worker instance. Fetch tasks from the queue and runs them"""
     while True:
         try:
             task = await task_queue.get()
@@ -50,13 +51,17 @@ async def crawler_worker(
                     await task_queue.put(task)
             else:
                 # decrement the sub urls counter
-                sub_urls_counter[task.main_url] = 0#-= 1
+                sub_urls_counter[task.main_url] = 0  # -= 1
 
             if sub_urls_counter[task.main_url] == 0:
                 # Add the images for the main url removing duplicates
                 images = list(set(images_for_url[task.main_url]))
-                json_images = json.dumps(images)
-                await db_queries.update_job(client, id=task.job_id, image_urls=json_images)
+                await db_queries.update_job(
+                    client,
+                    id=task.job_id,
+                    image_urls=images,
+                    status=db_queries.Status.COMPLETED,
+                )
 
         except Exception as ex:
             logger.exception(ex)
@@ -100,9 +105,6 @@ async def crawl_website_workers(urls: List[str], job_id, threads: int = 1):
 
     # wait on the worker to end properly
     await asyncio.gather(*workers, return_exceptions=True)
-
-    # todo set as completed
-
     logger.info(f"Finished job id: {job_id} in {time.time() - start} seconds")
 
 
@@ -117,57 +119,14 @@ async def get_url_links(
         async with session.get(url) as response:
             html = await response.text()
 
-    # todo: replace with scrappy
     soup = BeautifulSoup(html, "html.parser")
-    subdomain = get_subdomain(url)
     if get_sub_href:
-        sub_hrefs = find_all_urls(soup, subdomain)
+        sub_urls = [link["href"] for link in soup.find_all("a", attrs={"href": HTTP_URL_RE})]
     else:
-        sub_hrefs = []
-    image_urls = find_all_images(soup, subdomain)
-    return image_urls, sub_hrefs
+        sub_urls = []
 
-
-async def get_html(url: str) -> str:
-    """Retrieve the html content at the given url"""
-    async with AsyncClient(verify=False) as client:
-        response = await client.get(url, timeout=Timeout(10))
-    return response.text
-
-
-def get_subdomain(url: str):
-    return "/".join(url.split("/")[:-1]) + "/"
-
-
-is_image_regex = re.compile(r"=?([^\"']*.(?:png|jpg|gif))", re.IGNORECASE)
-is_http_regex = re.compile(r"^https?://")
-
-
-def fix_relative_urls(urls: Iterable[str], base_url) -> List[str]:
-    """Fix relative urls by adding the fool url subdomain"""
-    full_urls = []
-    for url in urls:
-        if not re.match(is_http_regex, url):
-            full_urls.append(f"{base_url.removesuffix('/')}{url}")
-        else:
-            full_urls.append(url)
-    return full_urls
-
-
-def find_all_urls(soup: BeautifulSoup, base_url: str) -> List[str]:
-    """Find all href urls in the given soup. Note, will ignore mailto and # references"""
-    urls = soup.select("a[href]:not(a[href^=mailto\:], a[href^=\#], a[href$='.pdf'])")
-    urls = set([url["href"] for url in urls if url.get("href")])
-    return fix_relative_urls(urls, base_url)
-
-
-def find_all_images(soup: BeautifulSoup, base_url) -> List[str]:
-    """Find all image tags <img> with the filetype jpg, gif or png in the given soup. Note will exclude base64 images"""
-    images = soup.select('img[src$=".jpg"], img[src$=".gif"], img[src$=".png"]')
-    image_urls = set([img["src"] for img in images if img.get("src")])
-    return fix_relative_urls(image_urls, base_url)
-
-
-def find_all_images_regex(text: str) -> List[str]:
-    """Find all images in the text, this will retrieve images that don't have a <img> tag as well"""
-    return re.findall(is_image_regex, text)
+    image_urls = [
+        urljoin(url, link["src"])
+        for link in soup.find_all("img", attrs={"src": HTTP_URL_RE})
+    ]
+    return image_urls, sub_urls

@@ -32,9 +32,8 @@
 
 ## Todo:
 - crash server on any worker error
-- Add parameter for recursive depth
-- use scrappy instead of beautiful soup
-- use pytest sanic instead of pytest-async
+- Add parameter for recursive depth for how deep to fetch sublinks
+- use pytest sanic instead of pytest-async in tests
 - add edgedb in docker-compose
 - investigate adding nginx
 - add svelte frontend server-side rendered

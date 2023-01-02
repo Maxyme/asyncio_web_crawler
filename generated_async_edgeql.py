@@ -11,6 +11,7 @@ from __future__ import annotations
 import dataclasses
 import datetime
 import edgedb
+import enum
 import uuid
 
 
@@ -18,6 +19,7 @@ class NoPydanticValidation:
     @classmethod
     def __get_validators__(cls):
         from pydantic.dataclasses import dataclass as pydantic_dataclass
+
         pydantic_dataclass(cls)
         cls.__pydantic_model__.__get_validators__ = lambda: []
         return []
@@ -32,12 +34,17 @@ class CreateJobResult(NoPydanticValidation):
 @dataclasses.dataclass
 class GetJobByIdResult(NoPydanticValidation):
     id: uuid.UUID
-    threads: int | None
-    in_progress: bool | None
-    completed: bool | None
-    input_urls: str | None
-    image_urls: str | None
+    threads: int
+    status: Status
+    input_urls: list[str] | None
+    image_urls: list[str] | None
     created_at: datetime.datetime
+
+
+class Status(enum.Enum):
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    ERROR = "error"
 
 
 @dataclasses.dataclass
@@ -49,27 +56,24 @@ async def create_job(
     executor: edgedb.AsyncIOExecutor,
     *,
     threads: int,
-    in_progress: bool,
-    completed: bool,
-    input_urls: str,
-    image_urls: str,
+    status: Status,
+    input_urls: list[str],
+    image_urls: list[str],
 ) -> CreateJobResult:
     return await executor.query_single(
         """\
         select (insert Job {
             threads := <int16>$threads,
-            in_progress := <bool>$in_progress,
-            completed := <bool>$completed,
-            input_urls := <json>$input_urls,
-            image_urls := <json>$image_urls
+            status := <StatusType>$status,
+            input_urls := <array<str>>$input_urls,
+            image_urls := <array<str>>$image_urls
         }) {
             id,
             created_at
         };\
         """,
         threads=threads,
-        in_progress=in_progress,
-        completed=completed,
+        status=status,
         input_urls=input_urls,
         image_urls=image_urls,
     )
@@ -82,7 +86,7 @@ async def get_job_by_id(
 ) -> GetJobByIdResult | None:
     return await executor.query_single(
         """\
-        select Job {id, threads, in_progress, completed, input_urls, image_urls, created_at}
+        select Job {id, threads, status, input_urls, image_urls, created_at}
         filter Job.id = <uuid>$id\
         """,
         id=id,
@@ -103,16 +107,19 @@ async def update_job(
     executor: edgedb.AsyncIOExecutor,
     *,
     id: uuid.UUID,
-    image_urls: str,
+    status: Status,
+    image_urls: list[str],
 ) -> UpdateJobResult | None:
     return await executor.query_single(
         """\
         update Job
         filter Job.id = <uuid>$id
         set {
-            image_urls := <json>$image_urls
+            status := <StatusType>$status,
+            image_urls := <array<str>>$image_urls
         };\
         """,
         id=id,
+        status=status,
         image_urls=image_urls,
     )

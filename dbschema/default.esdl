@@ -5,12 +5,12 @@ module default {
       default := datetime_current();
     }
   }
+  scalar type StatusType extending enum<in_progress, completed, error>;
   type Job extending Auditable {
-    property threads -> int16;
-    property in_progress -> bool;
-    property completed -> bool;
-    property input_urls -> json;
-    property image_urls -> json;
+    required property threads -> int16;
+    required property status -> StatusType;
+    property input_urls -> array<str>;
+    property image_urls -> array<str>;
   }
 }
 

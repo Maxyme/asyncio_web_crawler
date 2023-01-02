@@ -19,12 +19,12 @@ migrate:
     edgedb migrate
 
 generate-queries:
-    edgedb-py --file
+    cd app && edgedb-py --file
 
 create-db-instance:
     edgedb project init
 
-destroy-db-instace:
+destroy-db-instance:
     edgedb instance destroy -I asyncio_web_crawler --force
 
 set positional-arguments
